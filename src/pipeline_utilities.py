@@ -5,7 +5,7 @@
 Common source for utility functions used by ABCD-BIDS task-fmri-pipeline
 Greg Conan: gconan@umn.edu
 Created: 2021-01-15
-Updated: 2024-01-19 (as_cli_attr); 2021-11-12 (the rest)
+Updated: 2024-01-19 (as_cli_attr); 2022-02-07 (the rest)
 """
 
 # Import standard libraries
@@ -59,7 +59,6 @@ def add_lvl_args_to(parser):
     """
     # 1) Top-level directory with pipeline_wrapper.py 2) Run number 3) Path to
     # .json file which stores the 'paths' dictionary 
-    # parser.add_argument('--code-dir', type=valid_readable_dir, required=True)
     parser.add_argument('--run-number', type=valid_whole_number, required=True)
     parser.add_argument('--temp-json', type=valid_readable_json, required=True)
     return parser
@@ -240,6 +239,31 @@ def get_all_analysis_paths(cli_args):
     return paths
 
 
+def get_and_copy_desc_tsv_file(paths):
+    """
+    Get the filtered motion regressors file - which may be called
+    sub-*_desc-filtered_motion.tsv or sub-*_desc-filteredincludingFD_motion.tsv
+    - then copy it to the intermediate_files directory
+    :param paths: Dictionary of path strings, and of dictionaries of path
+                  strings, used throughout processing in both levels
+    :return: String, valid path to new copy of desc-filtered_motion.tsv file
+    """
+    desc_tsv_globber = os.path.join(
+        paths['sub_ses']['func'], paths['sub_run'] + '_desc-filtered*_motion.tsv'
+    )
+    desc_tsv_files = glob(desc_tsv_globber)
+    default_tsv = desc_tsv_globber.replace('*', '')
+    desc_tsv_file = switch_case(
+        {0: 'err', 1: desc_tsv_files[0]}, len(desc_tsv_files),
+        default_tsv if default_tsv in desc_tsv_files else desc_tsv_files[0],
+        err=FileNotFoundError('{} not found'.format(desc_tsv_globber))
+    )
+    new_desc_tsv_copy = os.path.join(paths['lvl_1']['intermediate'],
+                                     os.path.basename(default_tsv))
+    shutil.copy2(desc_tsv_file, new_desc_tsv_copy)
+    return new_desc_tsv_copy
+
+
 def get_and_print_time_since(event_name, event_time):
     """
     Print and return a string showing how much time has passed since the
@@ -292,7 +316,7 @@ def get_LR_functions(cli_args, paths):
     """
     return {'surf': lambda x: os.path.join(
                 paths['sub_ses']['anat'], get_subj_ses(cli_args) +
-                '_hemi-{}_space-MNI_mesh-fsLR32k_midthickness.surf.gii'.format(x)
+                '_hemi-{}_space-MNI_mesh-fsLR32k_midthickness.surf.gii'.format(x) # TODO Use any midthicknessfile available, not just hardcoded 32k?
             ), 'shape': lambda y: os.path.join(
                 cli_args['templates'], y + '.atlasroi.32k_fs_LR.shape.gii'
             )}
@@ -662,10 +686,10 @@ def make_and_save_confound_matrix(cli_args, desc_tsv_file, lvl_paths,
     # Local variables: File paths, step filename, adjusted variable to censor
     # initial frames based on user-specification, and result (confounds fname)
     in_file = os.path.join(lvl_paths['intermediate'], desc_tsv_file)
+    tsv_fname_base = os.path.splitext(os.path.basename(desc_tsv_file))[0]
     def tsv_file_for_step(stepnum):
         return os.path.join(lvl_paths['intermediate'],
-                            ('{0}_desc-filteredincludingFD_motion_step{1}.tsv'
-                            .format(sub_run_basename, stepnum)))
+                            '{}_step{}.tsv'.format(tsv_fname_base, stepnum))
     censor_volumes = list(range(0, cli_args['censor']))
     confounds_name = str(sub_run_basename + '_confound_matrix.tsv')
     
@@ -944,6 +968,23 @@ def save_to_json_and_get_path(a_dict, dict_name, out_dir):
     return json_path
 
 
+def switch_case(switcher, condition, default, **throw_err):
+    """
+    Function emulating the functionality of a "switch case" statement
+    :param switcher: Dictionary
+    :param condition: Object that may be a key in the switcher dictionary
+    :param default: Object to return if condition isn't a key in switcher
+    :param throw_err: Unpacked dictionary mapping keys in switcher to errors to
+                      raise if that key is condition
+    :return: Object that either is a value in switcher mapped to the condition
+             key or is default
+    """
+    result = switcher.get(condition, default)
+    if result in throw_err:
+        raise throw_err[result]
+    return result
+
+
 def valid_float_0_to_1(val):
     """
     :param val: Object to check, then throw an error if it is invalid
@@ -989,7 +1030,7 @@ def valid_readable_json(path):
     :param path: Parameter to check if it represents a valid .json file path
     :return: String representing a valid .json file path
     """
-    return validate(path, lambda x: os.path.splitext(path)[-1] == '.json',
+    return validate(path, lambda x: os.path.splitext(x)[-1] == '.json',
                     valid_readable_file, '{} is not a readable .json filepath')
 
 

@@ -58,8 +58,6 @@ def main():
             read_in_scanners_info_from(run_args.pop(SCAN_ARG))
         )
 
-        print(run_paths['sub'], scan)  # TODO Remove this?
-
         # Extract event and eprime files
         extract_eprime_via_matlab(run_args, paths, each_run)
         process_abcd_extract_files(run_args, paths, each_run, scan)
@@ -78,11 +76,11 @@ def _cli():
     :return: Dictionary of all validated command-line arguments from user
     """
     arg_names = {'events_dir', 'fd', 'keep_all', 'output', 'runs', SCAN_ARG,
-                 'ses', 'spat_smooth', 'subject',  'study_dir', 'study_name',
-                 'task', 'templates', 'template1', 'template2', 'wb_command',
-                 as_cli_attr(WRAPPER_LOC)}
+                 'bids_dir', 'ses', 'spat_smooth', 'subject',  'study_dir',
+                 'study_name', 'task', 'templates', 'template1', 'template2',
+                 'wb_command', as_cli_attr(WRAPPER_LOC)}
     parser = get_pipeline_cli_argparser(arg_names)
-    return validate_cli_args(vars(parser.parse_args()), parser)
+    return validate_cli_args(vars(parser.parse_args()), parser, {SCAN_ARG})
 
 
 def get_all_scanner_info(cli_args, paths, all_scanners):
