@@ -5,7 +5,7 @@
 Common source for utility functions used by ABCD-BIDS task-fmri-pipeline
 Greg Conan: gconan@umn.edu
 Created: 2021-01-15
-Updated: 2021-11-12
+Updated: 2024-01-19 (as_cli_attr); 2021-11-12 (the rest)
 """
 
 # Import standard libraries
@@ -125,6 +125,14 @@ def as_cli_arg(arg_str):
     :return: String which is the command-line argument form of arg_str
     """
     return "--" + arg_str.replace("_", "-")
+
+
+def as_cli_attr(arg_str):
+    """
+    :param arg_str: String which is the command-line argument form of arg_str
+    :return: String naming a stored argument taken from the command line
+    """
+    return arg_str.strip("--").replace("-", "_")
 
 
 def copy_and_rename_file(old_file, new_file):
@@ -534,7 +542,7 @@ def get_pipeline_cli_argparser(arg_names=get_main_pipeline_arg_names()):
     )
     # Argument used to get this script's dir
     parser = add_arg_if_in_arg_names(WRAPPER_LOC, arg_names, parser,
-        type=valid_readable_dir, required=True,
+        type=valid_readable_dir, # required=True,
         help=('Valid path to existing ABCD-BIDS-task-fmri-pipeline directory '
               'that contains pipeline_wrapper.py')
     ) 

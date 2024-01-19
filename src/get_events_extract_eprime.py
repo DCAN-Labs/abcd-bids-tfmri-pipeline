@@ -5,7 +5,7 @@
 Extract event files for ABCD-specific task-fMRI data processing
 Greg Conan: gconan@umn.edu
 Created: 2021-06-07
-Updated: 2021-12-03
+Updated: 2024-01-19 (WRAPPER_LOC fix); 2021-12-03 (the rest)
 """
 
 # Import standard libraries
@@ -37,7 +37,7 @@ def find_local_imports(flg):
 WRAPPER_LOC = '--wrapper-location'
 SCRIPT_DIR = find_local_imports(WRAPPER_LOC)
 from src.pipeline_utilities import (
-    exit_with_time_info, extract_from_json, get_all_analysis_paths,
+    as_cli_attr, exit_with_time_info, extract_from_json, get_all_analysis_paths,
     get_pipeline_cli_argparser, get_sub_base, get_TR_and_ntpts, glob_and_copy,
     SCAN_ARG, validate_cli_args, valid_readable_dir
 )
@@ -79,7 +79,8 @@ def _cli():
     """
     arg_names = {'events_dir', 'fd', 'keep_all', 'output', 'runs', SCAN_ARG,
                  'ses', 'spat_smooth', 'subject',  'study_dir', 'study_name',
-                 'task', 'templates', 'template1', 'template2', 'wb_command'}
+                 'task', 'templates', 'template1', 'template2', 'wb_command',
+                 as_cli_attr(WRAPPER_LOC)}
     parser = get_pipeline_cli_argparser(arg_names)
     return validate_cli_args(vars(parser.parse_args()), parser)
 
