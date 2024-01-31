@@ -1,0 +1,4 @@
+ScannerType,NumberOfTimePointsToCensor,IncrementValue,Timepoints_MID,Timepoints_nback,Timepoints_SST
+DV25,5,4.0,408,367,442
+DV26,16,12.8,419,378,453
+S_P,8,6.4,411,370,445
